@@ -1,4 +1,4 @@
-# Scoreboard & text detection
+# Scoreboard detection & OCR
 Using U-Net architecture to segment scoreboard from tennis field and EAST or Pytessaract to extract Player names and who is serving indicator on video data of Tennis matches.
 
 ## Prerequisites

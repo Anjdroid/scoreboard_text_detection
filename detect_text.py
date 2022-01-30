@@ -33,9 +33,9 @@ def detect_chars(sb):
         if re.match(letters_pattern, b[0]):
             img = cv.rectangle(img, (int(b[1]), h - int(b[2])), (int(b[3]), h - int(b[4])), (0, 255, 0), 2)
             detected_chars.append(b[0])
-    cv.imshow('CHARACTER DETECTION', img)
-    cv.waitKey(0)
-    return detect_chars
+    #cv.imshow('CHARACTER DETECTION', img)
+    #cv.waitKey(0)
+    return detect_chars, img
 
 
 def detect_words(sb):
@@ -55,9 +55,9 @@ def detect_words(sb):
                 (x, y, w, h) = (words['left'][i], words['top'][i], words['width'][i], words['height'][i])
                 img = cv.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 detected_words.append(words['text'][i])
-    cv.imshow('WORD DETECTION', img)
-    cv.waitKey(0)
-    return detected_words
+    #cv.imshow('WORD DETECTION', img)
+    #cv.waitKey(0)
+    return detected_words, img
 
 
 def calc_bbox(x, y, angles, x_0, x_1, x_2, x_3):
@@ -86,7 +86,7 @@ def detect_text_EAST(image):
 	"feature_fusion/Conv_7/Sigmoid",
 	"feature_fusion/concat_3"]
     orig = image.copy()
-    img = (orig.copy() * 255).astype('uint8')
+    img = (orig.copy()).astype('uint8')
     W, H = orig.shape[:2]
     # load the pre-trained EAST text detector
     print('==Loading EAST text detector==')
@@ -130,8 +130,9 @@ def detect_text_EAST(image):
         # draw the bounding box on the image
         cv.rectangle(img, (startX, startY), (endX, endY), (0, 255, 0), 2)
     # show the output image
-    cv.imshow("TEXT DETECTION", img)
-    cv.waitKey(0)
+    #cv.imshow("TEXT DETECTION", img)
+    #cv.waitKey(0)
+    return img
 
 def run_text_detection():
     # iterate over frames
@@ -140,21 +141,33 @@ def run_text_detection():
         frame, mask, sb, gt = vdata[key]
 
         # TEXT DETECTION with Pytasseract
-        chars = detect_chars(sb)
-        words = detect_words(sb)
-        p1 = words[0]
-        p2 = words[1]
+        chars, i1 = detect_chars(sb)
+        words, i2 = detect_words(sb)
+        cv.imwrite('results/result_char_det_tess_' + key + '.png', i1.astype(np.uint8))
+        cv.imwrite('results/result_word_det_tess_' + key + '.png', i2.astype(np.uint8))
+        
+        if len(words) < 2:
+            print("=detected players= ", words)
+            print("==FAIL: only 1 player detected")
+        elif len(words) == 2:        
+            p1 = words[0]
+            p2 = words[0]
 
-        if p1[0] == '»':
-            p1 = p1.strip('»')
-            print('==STARTING PLAYER== \n', p1)
+            if p1[0] == '»':
+                p1 = p1.strip('»')
+                print('==STARTING PLAYER== \n', p1)
+            else:
+                p2 = p2.strip('»')
+                print('==STARTING PLAYER== \n', p2)
+            print('==DETECTED PLAYERS==\n', p1, p2)
         else:
-            p2 = p2.strip('»')
-            print('==STARTING PLAYER== \n', p2)
-        print('==DETECTED PLAYERS==\n', p1, p2)
+            print("=detected players= ", words)
+            print("==FAIL: more than 2 players detected")
 
         # TEXT detection with EAST
-        detect_text_EAST(sb)
+        img = detect_text_EAST(sb)
+        cv.imwrite('results/result_text_det_east_' + key + '.png', img.astype(np.uint8))
+
 
 
 if __name__ == "__main__":

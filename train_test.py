@@ -17,7 +17,7 @@ VIDEO_FILE = 'data/top-100-shots-rallies-2018-atp-season.mp4'
 JSON_FILE = 'data/top-100-shots-rallies-2018-atp-season-scoreboard-annotations.json'
 DATA_FOLDER = 'data'
 MODEL_PATH = 'model/sb-unet.pth'
-NUM_EPOCHS = 1000
+NUM_EPOCHS = 1500
 
 vdata = VideoDataset(VIDEO_FILE, JSON_FILE, test=True)
 keys = list(vdata.videos.keys())
@@ -32,18 +32,20 @@ def test_sbUNET():
     model.eval()
     for i in range(len(keys)):       
         # get item
-        frame, mask, sb, annot = vdata[keys[i]]   
+        frame, mask, sb, annot = vdata[keys[i]] 
+        og = frame.copy()  
         frame = normalize(cv.cvtColor((frame * 255).astype(np.uint8), cv.COLOR_BGR2GRAY))
         vid = torch.from_numpy(frame).float().unsqueeze(0).unsqueeze(0)
         output = model(vid).permute(0, 2, 3, 1).squeeze().detach().numpy()
         output_mask = output.argmax(2) * 255
-        cv.imshow('frame', (frame * 255).astype(np.uint8))
-        cv.imshow('mask', (mask*255).astype(np.uint8))
-        cv.imshow('out0', (output[:,:,0] * 255).astype(np.uint8))
-        cv.imshow('out1', (output[:,:,1] * 255).astype(np.uint8))
-        cv.imshow('result mask', (output_mask).astype(np.uint8))
-        cv.waitKey(0)
-
+        #cv.imshow('frame', (frame * 255).astype(np.uint8))
+        #cv.imshow('mask', (mask*255).astype(np.uint8))
+        #cv.imshow('out0', (output[:,:,0] * 255).astype(np.uint8))
+        #cv.imshow('out1', (output[:,:,1] * 255).astype(np.uint8))
+        #cv.imshow('result mask', (output_mask).astype(np.uint8))
+        #cv.waitKey(0)
+        cv.imwrite('results/result_mask_SB_' + keys[i] + '.png', (output_mask * (frame * 255)).astype(np.uint8))
+        
         # calc IOU
         mask = mask * 255
         overlap = np.clip(mask * output_mask, 0, 255) # logical AND
